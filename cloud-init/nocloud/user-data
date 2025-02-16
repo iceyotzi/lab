@@ -1,0 +1,4 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity: {hostn

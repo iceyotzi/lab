@@ -1,0 +1,40 @@
+
+_default:
+  just --list
+
+main iso_file:
+  just unpack_iso {{iso_file}}
+  just copy-cloud-init-config
+  just modify_grub
+  just repack_iso
+    
+
+unpack_iso iso_file:
+  -[ -d "./.iso" ] && rm -rf "./.iso"
+  mkdir .iso
+  xorriso -osirrox on -indev {{iso_file}} -extract / .iso
+  chmod -R u+w .iso
+
+copy-cloud-init-config:
+  mkdir .iso/nocloud
+  cp nocloud/user-data .iso/nocloud/user-data
+  cp nocloud/meta-data .iso/nocloud/meta-data
+
+modify_grub:
+  sed -i -e 's/---/ autoinstall  ---/g' ".iso/boot/grub/grub.cfg"
+  sed -i -e 's/---/ autoinstall  ---/g' ".iso/boot/grub/loopback.cfg"
+  sed -i -e 's,---, ds=nocloud\\\;s=/cdrom/nocloud/  ---,g' ".iso/boot/grub/grub.cfg"
+  sed -i -e 's,---, ds=nocloud\\\;s=/cdrom/nocloud/  ---,g' ".iso/boot/grub/loopback.cfg"
+
+repack_iso:
+  -[ -d "iceyotzi_ubuntu.iso" ] && rm -r "iceyotzi_ubuntu.iso"
+  xorriso -as mkisofs -r \
+    -V "ICEYOTZI UBUNTU" \
+    -no-emul-boot \
+    -boot-load-size 4 \
+    -boot-info-table \
+    --grub2-boot-info \
+    -eltorito-alt-boot \
+    -no-emul-boot \
+    -o "iceoyzi_ubuntu.iso" \
+    .iso
